@@ -835,8 +835,64 @@ When running directly on the host, install `ffmpeg` and Deno separately if you n
 | `app/kiwifarms_client.py` | Bridge and legacy public-search collection |
 | `app/ranking.py` | Lead scoring and potential labels |
 | `app/models.py` | SQLAlchemy database models |
+| `app/cli.py` | Command line interface entry point (`clipsearch`) |
+| `app/pinterest_client.py` | Public Pinterest pin search and image downloader |
+| `hermes/pinterest-image-search/SKILL.md` | Hermes Agent skill definition for Pinterest search |
 | `tests/` | Unit tests and saved HTML fixtures |
 | `data/` | Persistent SQLite data and downloaded files; not baked into the image |
+
+## Hermes Agent Integration
+
+ClipSearch includes an agent-friendly CLI (`clipsearch`) designed for autonomous invocation by **Hermes Agent**.
+
+### 1. Installation
+
+Install the package in editable mode or into your Python environment:
+
+```bash
+pip install -e .
+```
+
+### 2. Verification
+
+Verify the CLI installation:
+
+```bash
+clipsearch pinterest search "Tokyo skyline" --limit 3 --json
+```
+
+### 3. Install Hermes Skill
+
+Place or link the provided skill definition into your Hermes Agent skills directory:
+
+```bash
+mkdir -p ~/.hermes/skills/
+cp -r hermes/pinterest-image-search ~/.hermes/skills/
+```
+
+Hermes can now call the `clipsearch` CLI autonomously via its terminal capability.
+
+### 4. Example Agent Workflow
+
+- **User**: "Find me three moody photographs of abandoned malls."
+- **Hermes**:
+  1. Executes search:
+     ```bash
+     clipsearch pinterest search \
+       "moody abandoned shopping mall interior photography" \
+       --limit 10 \
+       --json
+     ```
+  2. Evaluates the returned JSON metadata (title, dimensions, aspect ratio, source URL).
+  3. Downloads selected candidates:
+     ```bash
+     clipsearch pinterest download \
+       --query "moody abandoned shopping mall interior photography" \
+       --index 1 \
+       --output ./images \
+       --json
+     ```
+  4. Inspects the downloaded images when vision capability is available and presents the image paths and source metadata (`pin_url`) to the user.
 
 ## Tests
 
