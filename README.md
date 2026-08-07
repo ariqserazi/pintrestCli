@@ -171,10 +171,17 @@ Hermes Agent can call `clipsearch` via its terminal capability.
 
 ### 1. Install Hermes Skill
 
-Copy the provided skill into your Hermes Agent skills directory:
+Copy the skill definition from the repository directory into your Hermes Agent skills directory:
 
 ```bash
 mkdir -p ~/.hermes/skills/
+cp -r ~/Projects2/pintrestCli/hermes/pinterest-image-search ~/.hermes/skills/
+```
+
+Or from inside the repository directory:
+
+```bash
+cd ~/Projects2/pintrestCli
 cp -r hermes/pinterest-image-search ~/.hermes/skills/
 ```
 
