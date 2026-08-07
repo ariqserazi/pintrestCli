@@ -2,8 +2,8 @@ from mcp.server.fastmcp import FastMCP
 import json
 import sys
 import os
+import asyncio
 
-# Ensure current directory is on python path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from app.pinterest_client import search_public_pinterest, download_pinterest_pin
@@ -11,9 +11,9 @@ from app.pinterest_client import search_public_pinterest, download_pinterest_pin
 mcp = FastMCP("pinterest-cli")
 
 @mcp.tool()
-def pinterest_search(query: str, limit: int = 5) -> str:
+async def pinterest_search(query: str, limit: int = 5) -> str:
     """Search public Pinterest for visual reference photos and images."""
-    raw_pins = search_public_pinterest(query=query, limit=limit)
+    raw_pins = await asyncio.to_thread(search_public_pinterest, query, limit)
     results = []
     for i, p in enumerate(raw_pins, start=1):
         w = p.get("width")
@@ -35,14 +35,14 @@ def pinterest_search(query: str, limit: int = 5) -> str:
     return json.dumps(out, indent=2)
 
 @mcp.tool()
-def pinterest_download(query: str, index: int = 1, output: str = ".") -> str:
+async def pinterest_download(query: str, index: int = 1, output: str = ".") -> str:
     """Download a specific Pinterest pin by index to a local folder."""
-    raw_pins = search_public_pinterest(query=query, limit=max(index, 10))
+    raw_pins = await asyncio.to_thread(search_public_pinterest, query, max(index, 10))
     if index < 1 or index > len(raw_pins):
         out = {"ok": False, "error": {"code": "INVALID_INDEX", "message": f"Index {index} out of range (1..{len(raw_pins)})"}}
     else:
         target = raw_pins[index - 1]
-        saved_path = download_pinterest_pin(pin=target, output_dir=output, query_slug=query, index=index)
+        saved_path = await asyncio.to_thread(download_pinterest_pin, target, output, query, index)
         w = target.get("width")
         h = target.get("height")
         ar = round(w / h, 4) if w and h else None
@@ -63,13 +63,13 @@ def pinterest_download(query: str, index: int = 1, output: str = ".") -> str:
     return json.dumps(out, indent=2)
 
 @mcp.tool()
-def pinterest_fetch(query: str, limit: int = 3, output: str = ".") -> str:
+async def pinterest_fetch(query: str, limit: int = 3, output: str = ".") -> str:
     """Search and batch download top Pinterest photos directly to disk."""
-    raw_pins = search_public_pinterest(query=query, limit=limit)
+    raw_pins = await asyncio.to_thread(search_public_pinterest, query, limit)
     downloaded = []
     for i, p in enumerate(raw_pins, start=1):
         try:
-            sp = download_pinterest_pin(pin=p, output_dir=output, query_slug=query, index=i)
+            sp = await asyncio.to_thread(download_pinterest_pin, p, output, query, i)
             w = p.get("width")
             h = p.get("height")
             ar = round(w / h, 4) if w and h else None
