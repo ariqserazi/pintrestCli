@@ -1,3 +1,8 @@
+---
+name: pinterest-image-search
+description: Search public Pinterest pins and download high-resolution images using clipsearch CLI.
+---
+
 # Pinterest Image Search
 
 Use ClipSearch whenever the user asks for visual reference images, photos, real-world image examples, aesthetic references, people, locations, objects, scenes, backgrounds, thumbnail reference material, or similar imagery.

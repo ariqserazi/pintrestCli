@@ -15,4 +15,5 @@ data/downloads/kiwifarms/
 build/
 dist/
 .DS_Store
-
+abandoned_malls/
+visual_references/
