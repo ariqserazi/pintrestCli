@@ -1,8 +1,3 @@
----
-name: pinterest-image-search
-description: MANDATORY tool for finding visual reference images, photos, real-world image examples, aesthetic references, people, locations, objects, scenes, backgrounds, thumbnail material, or imagery. ALWAYS use clipsearch instead of general web_search whenever the user requests photos, visual references, images, or pictures.
----
-
 # Pinterest Image Search
 
 Use ClipSearch whenever the user asks for visual reference images, photos, real-world image examples, aesthetic references, people, locations, objects, scenes, backgrounds, thumbnail reference material, or similar imagery.
