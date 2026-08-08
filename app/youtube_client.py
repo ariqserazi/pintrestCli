@@ -42,6 +42,8 @@ async def search_youtube_videos(query: str, limit: int = 5) -> list[YouTubeVideo
         "skip_download": True,
         "quiet": True,
         "no_warnings": True,
+        "socket_timeout": 15,
+        "retries": 3,
         "extractor_args": {
             "youtube": {
                 "player_client": ["mweb", "android", "web"],
@@ -96,7 +98,8 @@ async def download_youtube_video(
             "preferredquality": "192",
         }]
     else:
-        format_spec = f"bestvideo[height<={max_height}][ext=mp4]+bestaudio[ext=m4a]/best[height<={max_height}][ext=mp4]/best"
+        # Use single pre-merged stream format to prevent ffmpeg hangs/timeouts
+        format_spec = f"best[height<={max_height}][ext=mp4]/best[ext=mp4]/best"
         postprocessors = []
 
     ydl_opts = {
@@ -104,6 +107,9 @@ async def download_youtube_video(
         "outtmpl": out_template,
         "quiet": True,
         "no_warnings": True,
+        "socket_timeout": 15,
+        "retries": 3,
+        "fragment_retries": 3,
         "postprocessors": postprocessors,
         "extractor_args": {
             "youtube": {
