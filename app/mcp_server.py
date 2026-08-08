@@ -2,34 +2,34 @@ from mcp.server.fastmcp import FastMCP
 import json
 import sys
 import os
-import asyncio
+from pathlib import Path
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from app.pinterest_client import search_public_pinterest, download_pinterest_pin
+from app.pinterest_client import search_public_pinterest, download_pinterest_pin, pinterest_query_slug
 
 mcp = FastMCP("pinterest-cli")
 
 @mcp.tool()
 async def pinterest_search(query: str, limit: int = 5) -> str:
     """Search public Pinterest for visual reference photos and images."""
-    raw_pins = await asyncio.to_thread(search_public_pinterest, query, limit)
+    _, raw_pins = await search_public_pinterest(query=query, limit=limit)
     results = []
     for i, p in enumerate(raw_pins, start=1):
-        w = p.get("width")
-        h = p.get("height")
+        w = p.width
+        h = p.height
         ar = round(w / h, 4) if w and h else None
         results.append({
             "index": i,
-            "pin_id": str(p.get("id", "")),
-            "title": str(p.get("title", "") or p.get("grid_title", "")),
-            "description": str(p.get("description", "")),
-            "pinner": str(p.get("pinner", {}).get("username", "") if isinstance(p.get("pinner"), dict) else ""),
+            "pin_id": str(p.pin_id),
+            "title": str(p.title),
+            "description": str(p.description),
+            "pinner": str(p.pinner or ""),
             "width": w,
             "height": h,
             "aspect_ratio": ar,
-            "pin_url": f"https://www.pinterest.com/pin/{p.get('id')}/" if p.get("id") else "",
-            "image_url": str(p.get("image_url", ""))
+            "pin_url": str(p.pin_url),
+            "image_url": str(p.image_url)
         })
     out = {"ok": True, "command": "search", "source": "pinterest", "query": query, "count": len(results), "results": results}
     return json.dumps(out, indent=2)
@@ -37,27 +37,30 @@ async def pinterest_search(query: str, limit: int = 5) -> str:
 @mcp.tool()
 async def pinterest_download(query: str, index: int = 1, output: str = ".") -> str:
     """Download a specific Pinterest pin by index to a local folder."""
-    raw_pins = await asyncio.to_thread(search_public_pinterest, query, max(index, 10))
+    query_slug = pinterest_query_slug(query)
+    _, raw_pins = await search_public_pinterest(query=query, limit=max(index, 10))
     if index < 1 or index > len(raw_pins):
         out = {"ok": False, "error": {"code": "INVALID_INDEX", "message": f"Index {index} out of range (1..{len(raw_pins)})"}}
     else:
         target = raw_pins[index - 1]
-        saved_path = await asyncio.to_thread(download_pinterest_pin, target, output, query, index)
-        w = target.get("width")
-        h = target.get("height")
+        out_dir = Path(output).resolve()
+        stem = out_dir / f"{query_slug}-{index:02d}-{target.pin_id}"
+        saved_path = await download_pinterest_pin(target, stem)
+        w = target.width
+        h = target.height
         ar = round(w / h, 4) if w and h else None
         res = {
             "index": index,
-            "pin_id": str(target.get("id", "")),
-            "title": str(target.get("title", "") or target.get("grid_title", "")),
-            "description": str(target.get("description", "")),
-            "pinner": str(target.get("pinner", {}).get("username", "") if isinstance(target.get("pinner"), dict) else ""),
+            "pin_id": str(target.pin_id),
+            "title": str(target.title),
+            "description": str(target.description),
+            "pinner": str(target.pinner or ""),
             "width": w,
             "height": h,
             "aspect_ratio": ar,
-            "pin_url": f"https://www.pinterest.com/pin/{target.get('id')}/" if target.get("id") else "",
-            "image_url": str(target.get("image_url", "")),
-            "local_path": saved_path
+            "pin_url": str(target.pin_url),
+            "image_url": str(target.image_url),
+            "local_path": str(saved_path)
         }
         out = {"ok": True, "command": "download", "source": "pinterest", "query": query, "result": res}
     return json.dumps(out, indent=2)
@@ -65,21 +68,24 @@ async def pinterest_download(query: str, index: int = 1, output: str = ".") -> s
 @mcp.tool()
 async def pinterest_fetch(query: str, limit: int = 3, output: str = ".") -> str:
     """Search and batch download top Pinterest photos directly to disk."""
-    raw_pins = await asyncio.to_thread(search_public_pinterest, query, limit)
+    query_slug = pinterest_query_slug(query)
+    _, raw_pins = await search_public_pinterest(query=query, limit=limit)
+    out_dir = Path(output).resolve()
     downloaded = []
     for i, p in enumerate(raw_pins, start=1):
         try:
-            sp = await asyncio.to_thread(download_pinterest_pin, p, output, query, i)
-            w = p.get("width")
-            h = p.get("height")
+            stem = out_dir / f"{query_slug}-{i:02d}-{p.pin_id}"
+            sp = await download_pinterest_pin(p, stem)
+            w = p.width
+            h = p.height
             ar = round(w / h, 4) if w and h else None
             downloaded.append({
                 "index": i,
-                "pin_id": str(p.get("id", "")),
-                "title": str(p.get("title", "") or p.get("grid_title", "")),
-                "pin_url": f"https://www.pinterest.com/pin/{p.get('id')}/" if p.get("id") else "",
-                "image_url": str(p.get("image_url", "")),
-                "local_path": sp
+                "pin_id": str(p.pin_id),
+                "title": str(p.title),
+                "pin_url": str(p.pin_url),
+                "image_url": str(p.image_url),
+                "local_path": str(sp)
             })
         except Exception:
             pass
