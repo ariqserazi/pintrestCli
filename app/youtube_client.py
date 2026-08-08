@@ -42,6 +42,11 @@ async def search_youtube_videos(query: str, limit: int = 5) -> list[YouTubeVideo
         "skip_download": True,
         "quiet": True,
         "no_warnings": True,
+        "extractor_args": {
+            "youtube": {
+                "player_client": ["mweb", "android", "web"],
+            }
+        },
     }
 
     def _search():
@@ -100,6 +105,16 @@ async def download_youtube_video(
         "quiet": True,
         "no_warnings": True,
         "postprocessors": postprocessors,
+        "extractor_args": {
+            "youtube": {
+                "player_client": ["mweb", "android", "web"],
+            }
+        },
+        "http_headers": {
+            "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1",
+            "Accept": "*/*",
+            "Accept-Language": "en-US,en;q=0.9",
+        },
     }
 
     def _download():
